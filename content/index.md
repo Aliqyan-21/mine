@@ -5,6 +5,7 @@ nav: 1
 ---
 
 # Aliqyan Abid
+###### A software engineers blog
 
 Hello, and welcome, a site made by rattip, my personal tool btw, [know more](#home)
 

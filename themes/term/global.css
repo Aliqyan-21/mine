@@ -94,6 +94,17 @@ body {
   text-align: center;
 }
 
+/* heading rhythm */
+.rattip-h1,
+.rattip-h2,
+.rattip-h3,
+.rattip-h4,
+.rattip-h5,
+.rattip-h6 {
+  scroll-margin-top: 1rem;
+}
+
+/* h1 — primary document title */
 .rattip-h1 {
   font-family: 'IBM Plex Mono', monospace;
   font-size: 1.5rem;
@@ -116,16 +127,19 @@ body {
   50%       { opacity: 0; }
 }
 
+/* h2 — major section */
 .rattip-h2 {
   font-family: 'IBM Plex Mono', monospace;
   font-size: 0.78rem;
   font-weight: 400;
   color: var(--accent);
-  margin: 1.4rem 0 0.5rem;
+  margin: 1.6rem 0 0.55rem;
   text-transform: uppercase;
   letter-spacing: 0.18em;
+  position: relative;
 }
 
+/* h3 — subsection / linked heading */
 .rattip-h3 {
   font-family: 'IBM Plex Mono', monospace;
   font-size: 0.74rem;
@@ -133,7 +147,7 @@ body {
   color: var(--text-dim);
   text-transform: uppercase;
   letter-spacing: 0.14em;
-  margin: 1rem 0 0.3rem;
+  margin: 1.1rem 0 0.35rem;
 }
 
 .rattip-h3 .rattip-a {
@@ -145,14 +159,57 @@ body {
   color: var(--accent);
 }
 
-.rattip-h4,
-.rattip-h5,
-.rattip-h6 {
+/* h4 — serif subheading */
+.rattip-h4 {
   font-family: 'IBM Plex Serif', serif;
-  font-size: 0.88rem;
-  font-weight: 300;
+  font-size: 1rem;
+  font-weight: 400;
+  font-style: italic;
+  color: var(--white);
+  line-height: 1.4;
+  margin: 1rem 0 0.3rem;
+  letter-spacing: 0.01em;
+}
+
+/* h5 — supporting subheading */
+.rattip-h5 {
+  font-family: 'IBM Plex Serif', serif;
+  font-size: 0.9rem;
+  font-weight: 400;
   color: var(--text);
-  margin: 0.8rem 0 0.25rem;
+  line-height: 1.45;
+  margin: 0.85rem 0 0.25rem;
+  letter-spacing: 0.01em;
+}
+
+/* h6 — quiet label-like heading */
+.rattip-h6 {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.66rem;
+  font-weight: 400;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
+  margin: 0.8rem 0 0.2rem;
+}
+
+/* optional: tighter first-heading spacing in blocks */
+.rattip-p + .rattip-h2,
+.rattip-ul + .rattip-h2,
+.rattip-ol + .rattip-h2,
+.rattip-pre + .rattip-h2,
+.rattip-blockquote + .rattip-h2,
+.rattip-table + .rattip-h2 {
+  margin-top: 1.8rem;
+}
+
+.rattip-p + .rattip-h3,
+.rattip-ul + .rattip-h3,
+.rattip-ol + .rattip-h3,
+.rattip-pre + .rattip-h3,
+.rattip-blockquote + .rattip-h3,
+.rattip-table + .rattip-h3 {
+  margin-top: 1.2rem;
 }
 
 .rattip-p {
