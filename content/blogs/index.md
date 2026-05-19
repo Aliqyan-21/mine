@@ -5,6 +5,7 @@ nav: 2
 ---
 
 ## Technical Blogs
-- [_first blog_](/blogs/first_blog.html)
+coming soon...
 
 ## Non Technical Blogs (read AYOR)
+coming soon...
