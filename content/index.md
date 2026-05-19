@@ -7,7 +7,7 @@ nav: 1
 # Aliqyan Abid
 ###### A software engineers blog
 
-Hello, and welcome, a site made by rattip, my personal tool btw, [know more](#home)
+Hello, and welcome, a site made by rattip, my personal tool btw, [know more](/blogs/rattip.html)
 
 I write code the way I think, close to the metal, suspicious of that mf abstraction I haven't earned yet.
 
