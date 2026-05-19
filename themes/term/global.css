@@ -94,7 +94,6 @@ body {
   text-align: center;
 }
 
-/* heading rhythm */
 .rattip-h1,
 .rattip-h2,
 .rattip-h3,
@@ -104,7 +103,6 @@ body {
   scroll-margin-top: 1rem;
 }
 
-/* h1 — primary document title */
 .rattip-h1 {
   font-family: 'IBM Plex Mono', monospace;
   font-size: 1.5rem;
@@ -127,7 +125,6 @@ body {
   50%       { opacity: 0; }
 }
 
-/* h2 — major section */
 .rattip-h2 {
   font-family: 'IBM Plex Mono', monospace;
   font-size: 0.78rem;
@@ -139,7 +136,6 @@ body {
   position: relative;
 }
 
-/* h3 — subsection / linked heading */
 .rattip-h3 {
   font-family: 'IBM Plex Mono', monospace;
   font-size: 0.74rem;
@@ -159,7 +155,6 @@ body {
   color: var(--accent);
 }
 
-/* h4 — serif subheading */
 .rattip-h4 {
   font-family: 'IBM Plex Serif', serif;
   font-size: 1rem;
@@ -171,7 +166,6 @@ body {
   letter-spacing: 0.01em;
 }
 
-/* h5 — supporting subheading */
 .rattip-h5 {
   font-family: 'IBM Plex Serif', serif;
   font-size: 0.9rem;
@@ -182,7 +176,6 @@ body {
   letter-spacing: 0.01em;
 }
 
-/* h6 — quiet label-like heading */
 .rattip-h6 {
   font-family: 'IBM Plex Mono', monospace;
   font-size: 0.66rem;
@@ -193,7 +186,6 @@ body {
   margin: 0.8rem 0 0.2rem;
 }
 
-/* optional: tighter first-heading spacing in blocks */
 .rattip-p + .rattip-h2,
 .rattip-ul + .rattip-h2,
 .rattip-ol + .rattip-h2,
@@ -398,6 +390,50 @@ body {
   padding: 0.1rem 0.35rem;
   color: var(--text-muted);
   cursor: default;
+}
+
+.rattip-back-container {
+  position: fixed;
+  top: 1.5rem;
+  left: 1.5rem;
+  z-index: 100;
+}
+
+.rattip-back-btn {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.65rem;
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  color: var(--text-muted);
+  text-decoration: none;
+  border: 1px solid var(--border);
+  padding: 0.4rem 0.6rem;
+  border-radius: 2px;
+  background: var(--bg);
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+}
+
+.rattip-back-dir {
+  color: var(--accent-dim);
+  margin-right: 2px;
+}
+
+.rattip-back-btn:hover {
+  color: var(--white);
+  border-color: var(--accent-dim);
+  background: var(--bg-raised);
+  transform: translateX(-3px);
+}
+
+@media (max-width: 900px) {
+  .rattip-back-container {
+    position: relative;
+    top: 0;
+    left: 0;
+    margin-bottom: 1rem;
+  }
 }
 
 ::-webkit-scrollbar         { width: 4px; height: 4px; }
