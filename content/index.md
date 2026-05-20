@@ -4,7 +4,7 @@ template: page
 nav: 1
 ---
 
-# A Software Engineers Blog
+# A Software Engineer's Blog
 
 Hello, and welcome, to this corner of the internet made not in **markup** but in **markdown** using `rattip`, my personal tool.
 [know more about it](/blogs/rattip.html)
