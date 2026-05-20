@@ -197,4 +197,4 @@ bro I don't need to make it complex, I want the most simples and laziest solutio
 
 ---
 
-rattip is [open source](https://github.com/aliqyan-21/rattip). if you want to build your own site with it, `rattip --init` is the beginning.
+rattip is [open source](https://github.com/aliqyan-21/rattip) under apache-2.0 license. if you want to build your own site with it, `rattip --init` is the beginning.

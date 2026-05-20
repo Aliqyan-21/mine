@@ -1,7 +1,7 @@
 ---
 title: projects
 template: page
-nav: 3
+nav: 4
 ---
 
 # Projects

@@ -1,16 +1,16 @@
 @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:ital,wght@0,300;0,400;0,500;1,300&family=IBM+Plex+Serif:ital,wght@0,300;0,400;1,300&display=swap');
 
 :root {
-  --bg:         #18191b;
-  --bg-raised:  #1e1f22;
-  --bg-code:    #141517;
-  --border:     #272829;
-  --text:       #9aa3ad;
-  --text-dim:   #4e5560;
+  --bg: #18191b;
+  --bg-raised: #1e1f22;
+  --bg-code: #141517;
+  --border: #272829;
+  --text: #9aa3ad;
+  --text-dim: #4e5560;
   --text-muted: #30333a;
-  --accent:     #6e8fa0;
+  --accent: #6e8fa0;
   --accent-dim: #3d5b6b;
-  --white:      #c8d4dc;
+  --white: #c8d4dc;
 }
 
 * {
@@ -121,8 +121,15 @@ body {
 }
 
 @keyframes blink {
-  0%, 100% { opacity: 1; }
-  50%       { opacity: 0; }
+
+  0%,
+  100% {
+    opacity: 1;
+  }
+
+  50% {
+    opacity: 0;
+  }
 }
 
 .rattip-h2 {
@@ -186,21 +193,21 @@ body {
   margin: 0.8rem 0 0.2rem;
 }
 
-.rattip-p + .rattip-h2,
-.rattip-ul + .rattip-h2,
-.rattip-ol + .rattip-h2,
-.rattip-pre + .rattip-h2,
-.rattip-blockquote + .rattip-h2,
-.rattip-table + .rattip-h2 {
+.rattip-p+.rattip-h2,
+.rattip-ul+.rattip-h2,
+.rattip-ol+.rattip-h2,
+.rattip-pre+.rattip-h2,
+.rattip-blockquote+.rattip-h2,
+.rattip-table+.rattip-h2 {
   margin-top: 1.8rem;
 }
 
-.rattip-p + .rattip-h3,
-.rattip-ul + .rattip-h3,
-.rattip-ol + .rattip-h3,
-.rattip-pre + .rattip-h3,
-.rattip-blockquote + .rattip-h3,
-.rattip-table + .rattip-h3 {
+.rattip-p+.rattip-h3,
+.rattip-ul+.rattip-h3,
+.rattip-ol+.rattip-h3,
+.rattip-pre+.rattip-h3,
+.rattip-blockquote+.rattip-h3,
+.rattip-table+.rattip-h3 {
   margin-top: 1.2rem;
 }
 
@@ -304,7 +311,8 @@ body {
 .rattip-blockquote .rattip-p {
   margin: 0;
 }
-.rattip-blockquote .rattip-p + .rattip-p {
+
+.rattip-blockquote .rattip-p+.rattip-p {
   margin-top: 0.4rem;
 }
 
@@ -392,51 +400,89 @@ body {
   cursor: default;
 }
 
+.link-logo {
+  width: 14px;
+  height: 14px;
+  vertical-align: middle;
+  filter: grayscale(1) brightness(0.8) opacity(0.6);
+  transition: all 0.2s ease;
+  margin-right: 0.4rem;
+}
+
+.rattip-li:hover .link-logo {
+  filter: grayscale(0) brightness(1) opacity(1);
+  transform: translateY(-1px);
+}
+
+.subtitle {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.65rem;
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+  color: var(--accent-dim);
+  margin-top: -0.5rem;
+  margin-bottom: 1.2rem;
+}
+
 .rattip-back-container {
   position: fixed;
-  top: 1.5rem;
-  left: 1.5rem;
+  top: 1.8rem;
+  left: 1.8rem;
   z-index: 100;
 }
 
 .rattip-back-btn {
   font-family: 'IBM Plex Mono', monospace;
-  font-size: 0.65rem;
-  text-transform: uppercase;
-  letter-spacing: 0.15em;
-  color: var(--text-muted);
+  font-size: 0.68rem;
+  color: var(--text-dim);
   text-decoration: none;
-  border: 1px solid var(--border);
-  padding: 0.4rem 0.6rem;
-  border-radius: 2px;
-  background: var(--bg);
-  transition: all 0.2s ease;
-  display: flex;
+  display: inline-flex;
   align-items: center;
+  gap: 0;
+  background: var(--bg-raised);
+  border: 1px solid var(--border);
+  border-radius: 2px;
+  padding: 0.3rem 0.65rem;
+  transition: border-color 0.15s, background 0.15s;
 }
 
-.rattip-back-dir {
-  color: var(--accent-dim);
-  margin-right: 2px;
+.rattip-back-prompt {
+  color: var(--accent);
+  margin-right: 0.45rem;
+}
+
+.rattip-back-cmd {
+  color: var(--text-dim);
+  margin-right: 0.3rem;
+}
+
+.rattip-back-arg {
+  color: var(--white);
 }
 
 .rattip-back-btn:hover {
-  color: var(--white);
   border-color: var(--accent-dim);
-  background: var(--bg-raised);
-  transform: translateX(-3px);
+  background: var(--bg);
 }
 
-@media (max-width: 900px) {
-  .rattip-back-container {
-    position: relative;
-    top: 0;
-    left: 0;
-    margin-bottom: 1rem;
-  }
+.rattip-back-btn:hover .rattip-back-arg {
+  color: var(--accent);
 }
 
-::-webkit-scrollbar         { width: 4px; height: 4px; }
-::-webkit-scrollbar-track   { background: var(--bg); }
-::-webkit-scrollbar-thumb   { background: var(--border); border-radius: 2px; }
-::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
+::-webkit-scrollbar {
+  width: 4px;
+  height: 4px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--bg);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 2px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--text-muted);
+}

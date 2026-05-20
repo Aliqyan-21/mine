@@ -1,7 +1,7 @@
 ---
 title: Blogs
 template: page
-nav: 2
+nav: 3
 ---
 
 ## Technical Blogs
