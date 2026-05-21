@@ -5,8 +5,11 @@ nav: 3
 ---
 
 ## Technical Blogs
-[rattip : my own ssg](/blogs/rattip.html)  
+[rattip : my own SSG](/blogs/rattip.html)  
 *The story of the tool using which this website is made.*
+
+[MIGR : my own IR](/blogs/migr.html)  
+*A story about lost files, knowledge graphs, mechanical clocks, and why complexity deserves respect.*
 
 ## Non Technical Blogs (read AYOR)
 coming soon...
