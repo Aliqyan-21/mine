@@ -6,14 +6,15 @@ nav: 1
 
 # A Software Engineer's Blog
 
-Hello, and welcome, to this corner of the internet made not in **markup** but in **markdown** using `rattip`, my personal tool.
-[know more about it](/blogs/rattip.html)
+A programmer who, besides codes, also loves to write stories and ~~bad~~ philosophy.
+
+This corner of the internet runs on [`rattip`](/blogs/rattip.html)
+a tool I made myself.
 
 ## what this place is?
 
 Writing about things I'm figuring out. Projects mid-tinkering. Opinions I'll probably revise. Technical and non-technical slop.
 
-### My links:
+### links
 
-- [<img class="link-logo" src="/assets/github.svg" />](https://github.com/aliqyan-21/)
-- [<img class="link-logo" src="/assets/linkedin.svg" />](https://www.linkedin.com/in/aliqyanabid/)
+[github](https://github.com/aliqyan-21/) · [linkedin](https://www.linkedin.com/in/aliqyanabid/) · [mail](mailto:aliqyanabid21@gmail.com)
