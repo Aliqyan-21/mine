@@ -16,7 +16,7 @@ nav: 3
 
 ---
 
-## Non Technical Blogs (read AYOR)
+## Non-Technical Blogs (read AYOR)
 
 [life of an ||atheist||](/blogs/loaa.html)  
 *Self exploration/explaination, and a thought rollercoaster of mine.*
