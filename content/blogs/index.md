@@ -7,6 +7,7 @@ nav: 3
 # Blogs
 
 ## Technical Blogs
+
 [rattip : my own SSG](/blogs/rattip.html)  
 *The story of the tool using which this website is made.*
 
@@ -16,6 +17,8 @@ nav: 3
 ---
 
 ## Non Technical Blogs (read AYOR)
-coming soon...
+
+[life of an ||atheist||](/blogs/loaa.html)  
+*Self exploration/explaination, and a thought rollercoaster of mine.*
 
 ---
