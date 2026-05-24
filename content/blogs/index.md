@@ -14,6 +14,9 @@ nav: 3
 [MIGR : my own IR](/blogs/migr.html)  
 *A story about lost files, knowledge graphs, mechanical clocks, and why complexity deserves respect.*
 
+[lx4c: latex math parser](/blogs/lx4c.html)  
+*A parser for latex math! what was the need for it? how u write it? find out.*
+
 ---
 
 ## Non-Technical Blogs (read AYOR)

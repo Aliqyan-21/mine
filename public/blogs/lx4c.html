@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <title>lx4c</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/styles/sunburst.min.css">
+  <link rel="stylesheet" href="/styles/global.css">
+</head>
+
+<body>
+  <nav class="rattip-back-container">
+    <a href="/blogs/index.html" class="rattip-back-btn">
+      <span class="rattip-back-prompt">$</span>
+      <span class="rattip-back-cmd">cd</span>
+      <span class="rattip-back-arg">../blogs</span>
+    </a>
+  </nav>
+  <header class="rattip-header">
+    <span class="rattip-date">24-05-2026</span>
+  </header>
+
+<h1 class="rattip-h1"> LX4C: MY OWN LATEX MATH PARSER </h1>
+<p class="rattip-p"> So if you read the rattip blog post, you must have saw this at the bottom: </p>
+<blockquote class="rattip-blockquote"> <p class="rattip-p"> LaTeX math support. Going to make own c latex math parser (I'll call it lx4c  <i class="rattip-i">wink wink</i> ). </p>
+</blockquote>
+<p class="rattip-p"> That wink wink was me being optimistic. I did not had much idea how to parse the latex math ( <i class="rattip-i">haven't used it much before</i> ). I just knew I wanted math to render on my blog without pulling in a JS library. </p>
+<h2 class="rattip-h2"> why not just use katex </h2>
+<p class="rattip-p"> The obvious answer was use KaTeX... inject a script tag, done. But then I thought about the spoiler feature in rattip. It's written in such a way that there is no need for writing seperate CSS no JS, just an inline onclick. Works everywhere, out of the box. </p>
+<p class="rattip-p"> I wanted math in rattip also to feel like that. </p>
+<p class="rattip-p"> KaTeX is around  <b class="rattip-b">280kb</b>  of JavaScript: </p>
+<ol class="rattip-ol">
+<li class="rattip-li"> It needs a  <b class="rattip-b">CDN</b> . </li>
+<li class="rattip-li"> It needs  <b class="rattip-b">CSS</b> . </li>
+<li class="rattip-li"> It  <b class="rattip-b">runs client side</b> . </li>
+<li class="rattip-li"> Every time the page load, the browser downloads it, parses it, then renders your equation. For what? So that <math class="rattip-lx"><mrow><mi>E</mi><mo>=</mo><mi>m</mi><msup><mi>c</mi><mn>2</mn></msup></mrow></math> shows up? </li>
+</ol>
+<p class="rattip-p"> Too much for simple thing, so ofc there must be some alternative for it. </p>
+<h2 class="rattip-h2"> the insight </h2>
+<p class="rattip-p"> I found out that browsers render MathML natively. Chrome 109+, Firefox always (from the starting), Safari always. It is just HTML. No JS, no CSS, nothing. You emit: </p>
+<pre class="rattip-pre"><code class="rattip-code lang-html"><\math><\mi>E<\/mi><\mo>=<\/mo><\mi>m<\/mi><\msup><\mi>c<\/mi><\mn>2<\/mn><\/msup><\/math>
+</code></pre>
+<p class="rattip-p"> and the browser renders it beautifully. </p>
+<p class="rattip-p"> So now the question became:  <i class="rattip-i">can I convert LaTeX math to MathML?</i> , at HTML generation time, before the browser ever sees it? </p>
+<p class="rattip-p"> Yes. Obviously yes. That is lx4c... </p>
+<h2 class="rattip-h2"> but wait, latex is turing complete </h2>
+<p class="rattip-p"> When I told a friend about my plan, they pointed me to this: </p>
+<blockquote class="rattip-blockquote"> <p class="rattip-p"> Parsing LaTeX programmatically is notoriously difficult because LaTeX is technically a Turing-complete, macro-expanded language. </p>
+</blockquote>
+<p class="rattip-p"> True! But also, completely irrelevant to what I was doing. </p>
+<p class="rattip-p"> LaTeX the document language is Turing complete. Macros, conditionals, loops, the whole thing. I think nobody parses that without an actual TeX engine. </p>
+<p class="rattip-p"> LaTeX math notation is something else entirely. Content between  <code class="rattip-code">$...$</code>  is just tokens and tree structure. No macros, no expansion, no conditionals. When you write  <code class="rattip-code">\frac{a}{b}</code>  you mean fraction, always, everywhere, no exceptions. </p>
+<p class="rattip-p"> So I had a simple task at hand parse a small, well-defined, context-free grammar that happens to use LaTeX syntax... </p>
+<h2 class="rattip-h2"> the design </h2>
+<p class="rattip-p"> I wanted lx4c to feel like how it felt to use md4c. Drop in  <code class="rattip-code">lx4c.h</code>  and  <code class="rattip-code">lx4c.c</code> , done. Two files, no dependencies, no build system. </p>
+<p class="rattip-p"> But I also wanted the architecture to be clean.  <b class="rattip-b">md4c</b>  separates parsing from rendering, parser fires callbacks, you implement what you want...Same idea here. </p>
+<p class="rattip-p"> Two layers: </p>
+<pre class="rattip-pre"><code class="rattip-code lang-">lx4c.h / lx4c.c                     — parser, produces AST
+lx_to_mathml.h / lx_to_mathml.c     — visitor, walks AST, emits MathML
+</code></pre>
+<p class="rattip-p"> The public API of the parser is two functions: </p>
+<pre class="rattip-pre"><code class="rattip-code lang-c">lx4c_node *lx4c_parse(const char *latex, size_t len);
+void       lx4c_free(lx4c_node *root);
+</code></pre>
+<p class="rattip-p"> That is the whole surface. Parse, get a tree, free when done. The renderer is separate because tomorrow someone might want LaTeX to plain text, or a linter, or something I have not thought of. Parser should know nothing about any damn output format! Just parse my content! you slaveee... </p>
+<h2 class="rattip-h2"> how it works </h2>
+<p class="rattip-p"> Three stages. </p>
+<p class="rattip-p">  <b class="rattip-b">Lexer</b>  turns the raw string into tokens: </p>
+<pre class="rattip-pre"><code class="rattip-code lang-">\frac{x^{2}}{\alpha + 3.14}
+
+CMD:frac  LBRACE  IDENT:x  SUP  LBRACE  NUMBER:2  RBRACE  RBRACE
+LBRACE  CMD:alpha  OTHER:+  NUMBER:3.14  RBRACE
+</code></pre>
+<p class="rattip-p">  <code class="rattip-code">\alpha</code>  strips the backslash so the parser gets  <code class="rattip-code">alpha</code>  directly. Single letters are  <code class="rattip-code">IDENT</code> . Multi-letter names always come through  <code class="rattip-code">CMD</code> . Numbers consume the dot so  <code class="rattip-code">3.14</code>  is one token. </p>
+<p class="rattip-p">  <b class="rattip-b">Parser</b>  builds the AST using recursive descent. Each grammar rule is one function. </p>
+<ul class="rattip-ul">
+<li class="rattip-li">  <code class="rattip-code">parse_row</code>  eats atoms until it hits a stop token. </li>
+<li class="rattip-li">  <code class="rattip-code">parse_atom</code>  handles one unit. </li>
+<li class="rattip-li">  <code class="rattip-code">parse_group</code>  handles content inside  <code class="rattip-code">{...}</code> . They call each other recursively. </li>
+</ul>
+<p class="rattip-p"> The key insight was  <code class="rattip-code">parse_group</code> : if it sees  <code class="rattip-code">{</code> , parse until  <code class="rattip-code">}</code> . If it sees no  <code class="rattip-code">{</code> , parse exactly one atom. This is what makes  <code class="rattip-code">x^2</code>  and  <code class="rattip-code">x^{2+1}</code>  both work correctly. </p>
+<p class="rattip-p">  <b class="rattip-b">The lookup table</b>  is the heart: </p>
+<pre class="rattip-pre"><code class="rattip-code lang-c">{"alpha",   CMD_IDENT, "α"},
+{"frac",    CMD_FRAC,  NULL},
+{"leq",     CMD_OP,    "≤"},
+{"sum",     CMD_OP,    "∑"},
+</code></pre>
+<p class="rattip-p"> When the parser sees  <code class="rattip-code">\alpha</code>  it looks it up, finds  <code class="rattip-code">CMD_IDENT</code>  with symbol  <code class="rattip-code">α</code> , emits  <code class="rattip-code"><mi>α</mi></code> . When it sees  <code class="rattip-code">\frac</code>  it finds  <code class="rattip-code">CMD_FRAC</code> , knows to parse two groups, builds an  <code class="rattip-code">mfrac</code>  node. The table is like the library. When u want to add new things, just add it in the library done. </p>
+<p class="rattip-p">  <b class="rattip-b">Renderer</b>  uses a visitor pattern. Each node type has a visit function: </p>
+<pre class="rattip-pre"><code class="rattip-code lang-c">void visit_frac(lx4c_node *n, void *ctx, const lx4c_visitor *v) {
+  append_buf(ctx, "<mfrac>");
+  for (int i=0; i<n->child_count; ++i) {
+  lx4c_accept(n->children[i], v, ctx);
+  }
+  append_buf(ctx, "</mfrac>");
+}
+</code></pre>
+<p class="rattip-p"> Visitor visits the whole tree and emits mathml according to the nodes it finds. </p>
+<h2 class="rattip-h2"> a bug that taught me something </h2>
+<p class="rattip-p"> Early on I had this in  <code class="rattip-code">parse_group</code> : </p>
+<pre class="rattip-pre"><code class="rattip-code lang-c">static lx4c_node *parse_group(lx4c_parser *p) {
+  if (p->curr.type == TOK_LBRACE) { parser_advance(p); }
+  lx4c_node *row = parse_row(p, TOK_RBRACE);
+  ...
+}
+</code></pre>
+<p class="rattip-p"> When there was no  <code class="rattip-code">{</code> , it still called  <code class="rattip-code">parse_row(p, TOK_RBRACE)</code>  which ate everything until a  <code class="rattip-code">}</code>  or EOF. So  <code class="rattip-code">a_i^2 + b_i^2 = c_i^2</code>   <i class="rattip-i">(<math class="rattip-lx"><mrow><msubsup><mi>a</mi><mi>i</mi><mn>2</mn></msubsup><mo>+</mo><msubsup><mi>b</mi><mi>i</mi><mn>2</mn></msubsup><mo>=</mo><msubsup><mi>c</mi><mi>i</mi><mn>2</mn></msubsup></mrow></math>, hehe)</i>  was producing one giant subscript containing the entire rest of the expression. </p>
+<p class="rattip-p"> The fix that came at that time once I saw it...If there is no  <code class="rattip-code">{</code> , just parse one atom: </p>
+<pre class="rattip-pre"><code class="rattip-code lang-c">if (p->curr.type == TOK_LBRACE) {
+  parser_advance(p);
+  lx4c_node *row = parse_row(p, TOK_RBRACE);
+  if (p->curr.type == TOK_RBRACE) { parser_advance(p); }
+  return row;
+}
+return parse_atom(p);
+</code></pre>
+<p class="rattip-p"> This is what  <code class="rattip-code">x^2</code>  and  <code class="rattip-code">x^{2+1}</code>  actually mean in LaTeX. No braces means one token. Braces mean a group. Once the code matched that mental model everything worked. </p>
+<h2 class="rattip-h2"> the result </h2>
+<p class="rattip-p"> User writes this in markdown: </p>
+<pre class="rattip-pre"><code class="rattip-code lang-">$x = \frac{-b \pm \sqrt{b^2 - 4ac}}{2a}$
+</code></pre>
+<p class="rattip-p"> rattip generates this: </p>
+<pre class="rattip-pre"><code class="rattip-code lang-html"><math class="rattip-lx">
+  <\mrow><\mi>x<\/mi><\mo>=</\mo><\mfrac>...<\/mfrac><\/mrow>
+</math>
+</code></pre>
+<p class="rattip-p"> Browser renders this: </p>
+<p class="rattip-p"> <math display="block" class="rattip-lx-display"><mrow><mi>x</mi><mo>=</mo><mfrac><mrow><mo>-</mo><mi>b</mi><mo>±</mo><msqrt><mrow><msup><mi>b</mi><mn>2</mn></msup><mo>-</mo><mn>4</mn><mi>a</mi><mi>c</mi></mrow></msqrt></mrow><mrow><mn>2</mn><mi>a</mi></mrow></mfrac></mrow></math> </p>
+<p class="rattip-p"> Zero JS. Zero CSS. Zero CDN. Just HTML that the browser already knows how to render. </p>
+<p class="rattip-p"> Same philosophy as spoiler. User writes something, magic happens, nothing to configure! </p>
+<h2 class="rattip-h2"> what lx4c handles </h2>
+<p class="rattip-p"> Greek letters, named functions, operators, fractions, roots, square roots, nth roots, superscripts, subscripts, both together, overlines, vectors, underlines, text inside math, and graceful fallback for anything unknown. </p>
+<p class="rattip-p"> That covers probably 95% of what appears in a technical blog. The other 5% falls back to showing the raw token name inside  <code class="rattip-code"><mi></code> , which is odd but  <i class="rattip-i">I think</i> ...not broken. </p>
+<h2 class="rattip-h2"> what is next for lx4c </h2>
+<p class="rattip-p"> Things I want to add (maybe) later: </p>
+<ul class="rattip-ul">
+<li class="rattip-li"> <input type="checkbox" disabled>  <code class="rattip-code">\left(</code>   <code class="rattip-code">\right)</code>  stretchy delimiters </li>
+<li class="rattip-li"> <input type="checkbox" disabled>  <code class="rattip-code">\begin{matrix}</code>  basic matrices </li>
+<li class="rattip-li"> <input type="checkbox" disabled>  <code class="rattip-code">\mathbf</code>  font variants </li>
+</ul>
+<p class="rattip-p"> But honestly the current 20 constructs are enough for everything I write... </p>
+<hr class="rattip-hr">
+<p class="rattip-p"> lx4c is <a href="https://github.com/aliqyan-21/lx4c" class="rattip-a">open source</a>  under  <b class="rattip-b">apache 2.0</b>  licence. </p>
+<p class="rattip-p"> If you want math on your static site without pulling in a JS library, it is right there. </p>
+
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+  <script>hljs.highlightAll();</script>
+
+<footer class="rattip-footer"> made using rattip | © aliqyan-21 </footer>
+</body>
+
+</html>
