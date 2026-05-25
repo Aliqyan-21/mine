@@ -1,0 +1,90 @@
+@import url("global.css");
+
+.rattip-h2 {
+  color: var(--accent);
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 0.3rem;
+  display: flex;
+  align-items: center;
+}
+
+.rattip-h2::before {
+  content: "●";
+  font-size: 0.6rem;
+  margin-right: 0.8rem;
+  opacity: 0.7;
+}
+
+.rattip-p {
+  color: var(--text);
+  font-size: 0.85rem;
+  line-height: 1.8;
+  margin-bottom: 1.2rem;
+  border-left: 1.5px solid var(--bg-raised);
+  padding-left: 1rem;
+}
+
+.rattip-p .rattip-a {
+  color: var(--white);
+  border-bottom: 1px dashed var(--accent-dim);
+}
+
+.rattip-p .rattip-a:hover {
+  color: var(--accent);
+  border-bottom-style: solid;
+}
+
+.rattip-table {
+  border-collapse: separate;
+  border-spacing: 0 8px;
+  margin-top: 2rem;
+}
+
+.rattip-tr {
+  outline: 1px solid var(--border);
+  transition: all 0.1s ease;
+}
+
+.rattip-tr:hover {
+  outline: 1px solid var(--accent);
+  background-color: var(--bg-raised) !important;
+  transform: translateX(4px);
+}
+
+.rattip-td:first-child {
+  background-color: var(--bg-code);
+  border-right: 1px solid var(--border);
+  font-weight: 500;
+  width: 120px;
+  transition: all 0.1s ease;
+}
+
+.rattip-tr:hover .rattip-td:first-child {
+  background-color: var(--accent-dim);
+  color: var(--white);
+  border-right-color: var(--accent);
+}
+
+.rattip-td:last-child {
+  padding-left: 1.5rem;
+}
+
+.rattip-td {
+  border-bottom: none !important;
+}
+
+.rattip-img {
+  width: 100px;
+  height: 100px;
+  object-fit: cover;
+  border-radius: 2px;
+  margin: 1rem 0;
+  border: 1px solid var(--border);
+  display: block;
+  transition: transform 0.2s ease;
+}
+
+.rattip-tr:hover .rattip-img {
+  border-color: var(--accent);
+  transform: scale(5);
+}
