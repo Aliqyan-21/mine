@@ -4,7 +4,7 @@ template: page
 nav: 1
 ---
 
-# A Software Engineer's Blog
+# A System Engineer's Blog
 
 A programmer who, besides codes, also loves to write stories and ~~bad~~ philosophy.
 
