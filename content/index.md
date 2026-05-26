@@ -13,7 +13,7 @@ a tool I made myself.
 
 ## what this place is?
 
-Writing about things I'm figuring out. Projects mid-tinkering. Opinions I'll probably revise. Technical and non-technical slop.
+Writing about things I'm figuring out. Projects mid-tinkering. Opinions I'll probably revise. Technical and non-technical stuff.
 
 ### links
 
