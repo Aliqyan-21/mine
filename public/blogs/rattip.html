@@ -6,6 +6,10 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta http-equiv="X-UA-Compatible" content="ie=edge">
   <title>my own ssg</title>
+  <script>
+    const t = localStorage.getItem('theme');
+    if (t) document.documentElement.setAttribute('data-theme', t);
+  </script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/styles/sunburst.min.css">
   <link rel="stylesheet" href="/styles/global.css">
 </head>
@@ -20,9 +24,9 @@
   </nav>
   <header class="rattip-header">
     <span class="rattip-date">20-05-2026</span>
+    <button class="theme-toggle" id="theme-btn" onclick="toggleTheme()" aria-label="toggle theme">☀</button>
   </header>
-
-<h1 class="rattip-h1"> RATTIP: MY OWN SSG </h1>
+  <h1 class="rattip-h1"> RATTIP: MY OWN SSG </h1>
 <p class="rattip-p"> It all started when finally I decided that there are many things going on in my mind that should be written, and then decided to make my blog. </p>
 <p class="rattip-p"> Then what I noticed was that people use either html,css from sratch or better, use static site generators like Hugo, Jekyll, etc. </p>
 <p class="rattip-p"> First my insticts told me to just use  <code class="rattip-code">Hugo</code>  or  <code class="rattip-code">Jekyll</code>  or something... I couldn't. </p>
@@ -150,7 +154,25 @@ nav: 1
   <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
   <script>hljs.highlightAll();</script>
 
-<footer class="rattip-footer"> made using rattip | © aliqyan-21 </footer>
+  <footer class="rattip-footer"> made using rattip | © aliqyan-21 </footer>
+  <script>
+    (function () {
+      function updateBtn() {
+        const btn = document.getElementById('theme-btn');
+        if (!btn) return;
+        btn.textContent = document.documentElement.getAttribute('data-theme') === 'light' ? '☽' : '☀';
+      }
+      updateBtn();
+      window.toggleTheme = function () {
+        const current = document.documentElement.getAttribute('data-theme');
+        const next = current === 'light' ? '' : 'light';
+        document.documentElement.setAttribute('data-theme', next);
+        localStorage.setItem('theme', next);
+        updateBtn();
+      };
+    })();
+  </script>
+</body>
 </body>
 
 </html>

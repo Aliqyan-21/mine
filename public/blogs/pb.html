@@ -6,6 +6,10 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta http-equiv="X-UA-Compatible" content="ie=edge">
   <title>surpassing the limit</title>
+  <script>
+    const t = localStorage.getItem('theme');
+    if (t) document.documentElement.setAttribute('data-theme', t);
+  </script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/styles/sunburst.min.css">
   <link rel="stylesheet" href="/styles/global.css">
 </head>
@@ -20,9 +24,9 @@
   </nav>
   <header class="rattip-header">
     <span class="rattip-date">31-05-2026</span>
+    <button class="theme-toggle" id="theme-btn" onclick="toggleTheme()" aria-label="toggle theme">☀</button>
   </header>
-
-<h1 class="rattip-h1"> Surpassing The Limit. </h1>
+  <h1 class="rattip-h1"> Surpassing The Limit. </h1>
 <hr class="rattip-hr">
 <p class="rattip-p"> TLDR; PureBasic’s demo version enforces an  <b class="rattip-b">800 loc</b>  limit by checking both raw file size and post-macro expansion line counts. I used radare2 to hunt down the "Gatekeeper" functions, surgically patched the size-check helper with a  <code class="rattip-code">mov eax, 1; ret</code>  success signal, and bypassed the secondary macro-expansion check  <b class="rattip-b">to turn the Demo into a fully unfettered compiler.</b>  </p>
 <hr class="rattip-hr">
@@ -692,7 +696,25 @@ Creating executable "hello".
   <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
   <script>hljs.highlightAll();</script>
 
-<footer class="rattip-footer"> made using rattip | © aliqyan-21 </footer>
+  <footer class="rattip-footer"> made using rattip | © aliqyan-21 </footer>
+  <script>
+    (function () {
+      function updateBtn() {
+        const btn = document.getElementById('theme-btn');
+        if (!btn) return;
+        btn.textContent = document.documentElement.getAttribute('data-theme') === 'light' ? '☽' : '☀';
+      }
+      updateBtn();
+      window.toggleTheme = function () {
+        const current = document.documentElement.getAttribute('data-theme');
+        const next = current === 'light' ? '' : 'light';
+        document.documentElement.setAttribute('data-theme', next);
+        localStorage.setItem('theme', next);
+        updateBtn();
+      };
+    })();
+  </script>
+</body>
 </body>
 
 </html>

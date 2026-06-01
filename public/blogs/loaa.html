@@ -6,6 +6,10 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta http-equiv="X-UA-Compatible" content="ie=edge">
   <title>life of an atheist</title>
+  <script>
+    const t = localStorage.getItem('theme');
+    if (t) document.documentElement.setAttribute('data-theme', t);
+  </script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/styles/sunburst.min.css">
   <link rel="stylesheet" href="/styles/global.css">
 </head>
@@ -20,9 +24,9 @@
   </nav>
   <header class="rattip-header">
     <span class="rattip-date">23-05-2026</span>
+    <button class="theme-toggle" id="theme-btn" onclick="toggleTheme()" aria-label="toggle theme">☀</button>
   </header>
-
-<h1 class="rattip-h1"> Life Of An Atheist </h1>
+  <h1 class="rattip-h1"> Life Of An Atheist </h1>
 <p class="rattip-p"> It wasn't always like this. </p>
 <p class="rattip-p"> I didn't wake up one day and decide to be an  <code class="rattip-code">atheist</code> . It happened the way most honest things happen, slowly, quietly, and only after I stopped being afraid to follow my own thought to its actual  <b class="rattip-b">conclusion</b> . </p>
 <p class="rattip-p"> The belief in a super, omnipotent being that has made rules for you to follow, so as to attain peace in some afterlife, used to feel like just... background noise. The kind of thing you accept without examining, the way you accept that the sky is blue. But the moment I started applying common sense to it, the same common sense I'd apply to anything else, it started to unravel. And once it starts, it doesn't stop. </p>
@@ -99,7 +103,25 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
   <script>hljs.highlightAll();</script>
 
-<footer class="rattip-footer"> made using rattip | © aliqyan-21 </footer>
+  <footer class="rattip-footer"> made using rattip | © aliqyan-21 </footer>
+  <script>
+    (function () {
+      function updateBtn() {
+        const btn = document.getElementById('theme-btn');
+        if (!btn) return;
+        btn.textContent = document.documentElement.getAttribute('data-theme') === 'light' ? '☽' : '☀';
+      }
+      updateBtn();
+      window.toggleTheme = function () {
+        const current = document.documentElement.getAttribute('data-theme');
+        const next = current === 'light' ? '' : 'light';
+        document.documentElement.setAttribute('data-theme', next);
+        localStorage.setItem('theme', next);
+        updateBtn();
+      };
+    })();
+  </script>
+</body>
 </body>
 
 </html>
