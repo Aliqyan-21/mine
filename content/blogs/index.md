@@ -17,6 +17,9 @@ nav: 3
 [lx4c: latex math parser](/blogs/lx4c.html)  
 *A parser for latex math! what was the need for it? how u write it? find out.*
 
+[Surpassing The Limit](/blogs/pb.html)  
+*A Pure Basic reverse engineering journey (for research purpose that is)*
+
 ---
 
 ## Non-Technical Blogs (read AYOR)
