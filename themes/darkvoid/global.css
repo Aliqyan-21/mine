@@ -61,26 +61,26 @@ body {
 }
 
 .theme-toggle {
-  margin-left: auto;
-  background: none;
+  position: fixed;
+  bottom: 1.5rem;
+  right: 1.5rem;
+  z-index: 1000;
+
+  background: var(--bg-raised);
   border: 1px solid var(--border);
-  border-radius: 3px;
-  width: 28px;
-  height: 28px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  padding: 0.25rem 0.5rem;
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  text-transform: uppercase;
+  color: var(--text-dim);
   cursor: pointer;
-  color: var(--text-muted);
-  font-size: 14px;
-  transition: border-color 0.15s, color 0.15s, background 0.15s;
-  flex-shrink: 0;
+  letter-spacing: 0.05em;
 }
 
 .theme-toggle:hover {
-  border-color: var(--accent-dim);
   color: var(--accent);
-  background: var(--bg-raised);
+  border-color: var(--accent);
+  background: var(--bg-code);
 }
 
 .rattip-nav {
