@@ -193,7 +193,6 @@ body {
   font-size: 0.66rem;
   font-weight: 400;
   color: var(--text-dim);
-  text-transform: uppercase;
   letter-spacing: 0.16em;
   margin: 0.8rem 0 0.2rem;
 }

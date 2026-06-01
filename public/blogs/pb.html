@@ -1,0 +1,698 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <title>surpassing the limit</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/styles/sunburst.min.css">
+  <link rel="stylesheet" href="/styles/global.css">
+</head>
+
+<body>
+  <nav class="rattip-back-container">
+    <a href="/blogs/index.html" class="rattip-back-btn">
+      <span class="rattip-back-prompt">$</span>
+      <span class="rattip-back-cmd">cd</span>
+      <span class="rattip-back-arg">../blogs</span>
+    </a>
+  </nav>
+  <header class="rattip-header">
+    <span class="rattip-date">31-05-2026</span>
+  </header>
+
+<h1 class="rattip-h1"> Surpassing The Limit. </h1>
+<hr class="rattip-hr">
+<p class="rattip-p"> TLDR; PureBasic’s demo version enforces an  <b class="rattip-b">800 loc</b>  limit by checking both raw file size and post-macro expansion line counts. I used radare2 to hunt down the "Gatekeeper" functions, surgically patched the size-check helper with a  <code class="rattip-code">mov eax, 1; ret</code>  success signal, and bypassed the secondary macro-expansion check  <b class="rattip-b">to turn the Demo into a fully unfettered compiler.</b>  </p>
+<hr class="rattip-hr">
+<p class="rattip-p"> So I was eating Subway sandwich and drinking Zero Sugar Coca Cola, while watching <a href="https://youtube.com/@tsodingdaily?si=KFscvd5Uocv6q5mg" class="rattip-a"> <b class="rattip-b">Tsoding</b> </a>  </p>
+<p class="rattip-p"> I was watching the video about Basic programming language, he was trying out Pure Basic which is a commercial lang, u have to pay to program in it, here is the vod -> <a href="https://youtu.be/7_EV22SpDY4?si=MwykHMLpZvmMPeKN" class="rattip-a">Basic still has potential</a> . </p>
+<p class="rattip-p"> Then in the vod he was reading the download page on pure basic site. So there is a demo version u can download, which limits the LOC that u can write... </p>
+<p class="rattip-p"> At this moment I had this intense curiosity, how are they preventing it? Is it straightforward silly, or some other trick that they are applying??? I gulped my remaining sandwich in one go, wiped my hands on my shorts, and fired up my terminal. </p>
+<h2 class="rattip-h2"> Running Pure Basic </h2>
+<p class="rattip-p"> I downloaded the demo version and ran it. </p>
+<p class="rattip-p"> ...A GUI popped up :| </p>
+<p class="rattip-p"> <img src="/assets/ss1.png" class="rattip-img" alt="ss of gui" />  </p>
+<p class="rattip-p"> I closed it and saw that the compilers folder have some binaries: </p>
+<pre class="rattip-pre"><code class="rattip-code lang-bash">╰─ ❯ find compilers -type f -executable
+compilers/purebasic_gtk2
+compilers/pbdebugger
+compilers/purebasic_qt
+compilers/pbcompilerc
+compilers/purebasic
+compilers/fasm
+compilers/pbcompiler
+</code></pre>
+<blockquote class="rattip-blockquote"> <p class="rattip-p"> And the binary I was interested in was  <code class="rattip-code">pbcompiler</code>  because sounds like compiler for pure basic...(innocent face) </p>
+</blockquote>
+<p class="rattip-p"> So I wrote a simple  <code class="rattip-code">hello world</code>  program in pure basic: </p>
+<pre class="rattip-pre"><code class="rattip-code lang-bash">╰─ ❯ cat hello.pb
+PrintN("Hello, World!")
+</code></pre>
+<p class="rattip-p"> and tried to run it. </p>
+<pre class="rattip-pre"><code class="rattip-code lang-bash">╰─ ❯ ./pbcompiler.cracked hello.pb
+PureBasic 6.40 (Linux - x64) Free
+Loading external modules...
+Starting compilation...
+2 lines processed.
+Creating and launching executable.
+
+- Feel the ..PuRe.. Power -
+
+Hello, World!
+</code></pre>
+<p class="rattip-p"> Wow!! </p>
+<p class="rattip-p"> Then I did something like this: </p>
+<pre class="rattip-pre"><code class="rattip-code lang-bash">╰─ ❯ for i in {0..800}; do
+echo "PrintN(\"Hello, World\")" >> big_hello.pb;
+done
+</code></pre>
+<p class="rattip-p"> And thus I had a file with 800 lines just printing 'Hello, World!'. </p>
+<p class="rattip-p"> And now when I tried to compile it I got this: </p>
+<pre class="rattip-pre"><code class="rattip-code lang-bash">╰─ ❯ ./pbcompiler big_hello.pb
+PureBasic 6.40 (Linux - x64) Free
+Loading external modules...
+Starting compilation...
+Error: Source too big for the Free version.
+</code></pre>
+<p class="rattip-p"> OMG Aaarghh, what I will do now,  <i class="rattip-i">I wanted to print 800 lines of 'Hello, World!' it was very necessary to save the Earthh!!</i>  </p>
+<p class="rattip-p"> Well...to see how they are handling it, I fired up one of my favorite tool...my trusty  <code class="rattip-code">r2</code> . </p>
+<h2 class="rattip-h2"> the tool: radare2 </h2>
+<p class="rattip-p"> r2 for short. </p>
+<p class="rattip-p"> It's a  <b class="rattip-b">free</b> ,  <b class="rattip-b">open source</b>  reverse engineering framework. </p>
+<p class="rattip-p"> Think of it as a swiss army knife for binaries. You can  <u class="rattip-u">disassemble</u> ,  <u class="rattip-u">debug</u> ,  <u class="rattip-u">patch</u> ,  <u class="rattip-u">search</u> ,  <u class="rattip-u">analyze</u> , all from a command line interface. </p>
+<h5 class="rattip-h5"> You can grab your pc now and do this along with me if u like! </h5>
+<p class="rattip-p"> To open a binary in r2: </p>
+<pre class="rattip-pre"><code class="rattip-code lang-bash">╰─ ❯ r2 pbcompiler
+ -- Ah shit, here we go again.
+[0x00402a40]>
+</code></pre>
+<blockquote class="rattip-blockquote"> <p class="rattip-p"> I like the random quotes radare throws when we open it though, this time it hit the nail. :) </p>
+</blockquote>
+<p class="rattip-p"> This drops you into this interactive shell. <br/>
+The address in the prompt  <code class="rattip-code">[0x00402a40]</code>  is just where r2's cursor currently is, like a seek position in the file. <br/>
+The first thing you always want to do is run analysis so r2 can figure out functions, strings, cross references etc: </p>
+<pre class="rattip-pre"><code class="rattip-code lang-bash">[0x00402a40]> aaaa
+INFO: Analyze all flags starting with sym. and entry0 (aa)
+INFO: Analyze imports (af@@@i)
+INFO: Analyze entrypoint (af@ entry0)
+INFO: Analyze symbols (af@@@s)
+INFO: Analyze all functions arguments/locals (afva@@@F)
+INFO: Analyze function calls (aac)
+INFO: Analyze len bytes of instructions for references (aar)
+INFO: Finding and parsing C++ vtables (avrr)
+INFO: Analyzing methods (af @@ method.*)
+INFO: Recovering local variables (afva@@@F)
+INFO: Type matching analysis for all functions (aaft)
+INFO: Propagate noreturn information (aanr)
+INFO: Scanning for strings constructed in code (/azs)
+INFO: Finding function preludes (aap)
+INFO: Enable anal.types.constraint for experimental type propagation
+[0x00402a40]>
+</code></pre>
+<p class="rattip-p"> As u can see from the output, radare2 did some analysis of the binary and  <code class="rattip-code">aaaa</code>  runs the most aggressive analysis pass. It takes a few seconds but after this r2 knows a lot about the binary. </p>
+<p class="rattip-p"> Now the compiler said,  <code class="rattip-code">Source too big for the Free version.</code> , so let's try searching that string in the binary first... </p>
+<hr class="rattip-hr">
+<h2 class="rattip-h2"> step 1: find the error string </h2>
+<h6 class="rattip-h6"> I increased the fan speed... </h6>
+<p class="rattip-p"> That string must exist somewhere in the binary. Let's find it. </p>
+<p class="rattip-p"> r2 has a command  <code class="rattip-code">iz</code>  which lists strings. </p>
+<p class="rattip-p"> We pipe it through  <code class="rattip-code">grep</code>  to find what we want: </p>
+<pre class="rattip-pre"><code class="rattip-code lang-bash">[0x00402a40]> iz | grep -i "source too big"
+1543 0x0005a528 0x0045a528 36  37   .rodata ascii   Source too big for the Free version.
+</code></pre>
+<p class="rattip-p"> Found it! </p>
+<h6 class="rattip-h6"> Heat was increasing, it's afternoon in India in summer... </h6>
+<p class="rattip-p"> Before we move on, Let me explain this output (non nerdy people can skip): </p>
+<ul class="rattip-ul">
+<li class="rattip-li">  <code class="rattip-code">1543</code>  is the index of this string in r2's string list </li>
+<li class="rattip-li">  <code class="rattip-code">0x0005a528</code>  is the offset in the file on disk </li>
+<li class="rattip-li">  <code class="rattip-code">0x0045a528</code>  is the virtual address in memory when the binary runs </li>
+<li class="rattip-li">  <code class="rattip-code">36</code>  is the length </li>
+<li class="rattip-li">  <code class="rattip-code">.rodata</code>  is the section it lives in memory. </li>
+</ul>
+<p class="rattip-p"> So the string is at virtual address  <code class="rattip-code">0x0045a528</code> . Now in our next step we should try to find what code in the binary actually uses this string. In RE this is called finding cross references, or xrefs. So le's do that... </p>
+<hr class="rattip-hr">
+<h2 class="rattip-h2"> step 2: find who uses the string (and hit a wall) </h2>
+<p class="rattip-p"> In r2, the command  <code class="rattip-code">axt [addr]</code>  finds data/code references to this address. So let's see what code references our error string: </p>
+<pre class="rattip-pre"><code class="rattip-code lang-bash">[0x00402a40]> axt 0x0005a528
+[0x00402a40]>
+</code></pre>
+<p class="rattip-p"> No output. Nothing. </p>
+<h6 class="rattip-h6"> I am thirsty, very thirsty, so I open my Paper Boat drink, and take a long sip. </h6>
+<p class="rattip-p"> Okay that's weird... The string clearly exists, the compiler clearly prints it, but r2 can't find anything in the code that references it. This usually means the string isn't referenced directly. Something in between is going on. </p>
+<p class="rattip-p"> Come on trusty r2... </p>
+<hr class="rattip-hr">
+<h2 class="rattip-h2"> step 3: search for the string's address in memory </h2>
+<p class="rattip-p"> So...a great man once said, "just because code doesn't reference the string directly doesn't mean the string is unreachable." </p>
+<p class="rattip-p"> Sometimes binaries store string addresses in a  <b class="rattip-b">pointer table</b> , which is just an array where each entry is a pointer to a string. Code then indexes into this table rather than hardcoding the string address everywhere. </p>
+<p class="rattip-p"> If that's the case here, then somewhere in the binary there should be the bytes  <code class="rattip-code">28 a5 45 00</code>  (the string's address  <code class="rattip-code">0x0045a528</code>  in little-endian format, which is how x86 stores numbers). </p>
+<p class="rattip-p"> Let's search for those bytes: </p>
+<pre class="rattip-pre"><code class="rattip-code lang-bash">[0x00402a40]> /x 28a54500 00000000
+0x004724a0 hit3_0 28a5450000000000
+[0x00402a40]>
+</code></pre>
+<p class="rattip-p">  <code class="rattip-code">/x</code>  in r2 searches for a hex pattern. And as u can see from the output... we found a match at  <code class="rattip-code">0x004724a0</code> . Let's go there and dump what's around it: </p>
+<pre class="rattip-pre"><code class="rattip-code lang-bash">[0x00402a40]> s 0x004724a0
+[0x004724a0]> pxq 128
+0x004724a0  0x000000000045a528  0x000000000045a550   (.E.....P.E.....
+0x004724b0  0x000000000045a590  0x000000000045a5b8   ..E.......E.....
+0x004724c0  0x000000000045a5e0  0x000000000045a610   ..E.......E.....
+0x004724d0  0x000000000045a640  0x0000000000455168   @.E.....hQE.....
+0x004724e0  0x000000000045a670  0x000000000045a6b0   p.E.......E.....
+0x004724f0  0x000000000045a6e8  0x0000000000455182   ..E......QE.....
+0x00472500  0x000000000045a708  0x000000000045a748   ..E.....H.E.....
+0x00472510  0x000000000045a788  0x000000000045a7b8   ..E.......E.....
+[0x004724a0]>
+</code></pre>
+<p class="rattip-p">  <code class="rattip-code">s</code>  means seek, it moves r2's cursor to that address.  <code class="rattip-code">pxq</code>  does word/qword hexdumps. </p>
+<p class="rattip-p"> Look at the output. A perfectly neat table of 8-byte pointers, all pointing into the  <code class="rattip-code">.rodata</code>  section. And...would u look at that? Our string  <code class="rattip-code">0x0045a528</code>  is the very first entry there, so yeah, it's there in pointer table, basically an array of error messages. Code picks an error by index, grabs the pointer, done. </p>
+<p class="rattip-p"> Let's check what the other entries say to confirm: </p>
+<pre class="rattip-pre"><code class="rattip-code lang-bash">[0x004724a0]> ps @ 0x000000000045a590
+A procedure must begin with a '('.
+
+[0x004724a0]> ps @ 0x000000000045a5e0
+A ')' is expected to close the procedure.
+
+[0x004724a0]>
+</code></pre>
+<p class="rattip-p">  <code class="rattip-code">ps</code>  commands prints pascal/wide/zero-terminated strings at a given address. </p>
+<p class="rattip-p"> And if we see the output, they all sound like compiler messages, so yeah we sort of found the  <i class="rattip-i">error message pointer table</i> . </p>
+<p class="rattip-p"> So now we know the structure: </p>
+<ul class="rattip-ul">
+<li class="rattip-li"> Error table lives at  <code class="rattip-code">0x004724a0</code>  </li>
+<li class="rattip-li"> "Source too big" is at index 0 </li>
+<li class="rattip-li"> Code somewhere loads a string from this table and prints it </li>
+</ul>
+<p class="rattip-p"> But we still need to find the code that does the actual limit check and triggers this error... </p>
+<hr class="rattip-hr">
+<h2 class="rattip-h2"> step 4: find the error dispatcher </h2>
+<p class="rattip-p"> Since  <code class="rattip-code">axt</code>  failed on the string directly, let's try it on the table itself: </p>
+<pre class="rattip-pre"><code class="rattip-code lang-bash">[0x004724a0]> axt 0x004724a0
+[0x004724a0]>
+</code></pre>
+<p class="rattip-p"> Also nothing... The table address isn't referenced directly in code either. The compiler is using RIP-relative addressing (a way of computing addresses relative to the current instruction pointer) which r2 didn't resolve into a proper cross reference. </p>
+<p class="rattip-p"> Different approach. Let's find the function that actually dispatches errors. It probably loads from the table and copies the string somewhere. We can search for that pattern by looking at who calls  <code class="rattip-code">strcpy</code>  with a destination that looks like an error buffer. </p>
+<p class="rattip-p"> <img src="/assets/later.png" class="rattip-img" alt="meme" />  </p>
+<p class="rattip-p"> After some digging (a lot of dead ends, some huge 2000+ line functions that turned out to be just code generators, or some data r2 confused to be code, some garbage disassembly because r2 was reading a data table as code), we find  <code class="rattip-code">fcn.004159b0</code> : </p>
+<pre class="rattip-pre"><code class="rattip-code lang-asm">[0x004159b0]> pdd
+/* r2dec pseudo code output (r2 5.9.8) */
+/* pbcompiler @ 0x4159b0 */
+#include <stdint.h>
+
+int64_t fcn_004159b0 (char ** dest) {
+    rdi = dest;
+    rax = 0x492698;
+    edx = *(rax);
+    if (edx == 0) {
+        rdx = 0x4a1998;
+        if (*(rdx) == 0) {
+            goto label_0;
+        }
+    }
+    return rax;
+label_0:
+    *(rax) = edi;
+    rax = 0x4a3d20;
+    rdi = (int64_t) edi;
+    rdx = *(rax);
+    rax = 0x493fb0;
+    *(rax) = rdx;
+    rax = 0x00472220;
+    strcpy (0x493420, *((rax + rdi*8)));
+    return rax;
+}
+</code></pre>
+<p class="rattip-p"> There are some very powerful command in r2, two of them are: </p>
+<ul class="rattip-ul">
+<li class="rattip-li">  <code class="rattip-code">pdf</code>  -> disassembles the code into readable asm. </li>
+<li class="rattip-li">  <code class="rattip-code">pdd</code>  -> disassembles the code into more readable pseudo code. </li>
+</ul>
+<p class="rattip-p">  <b class="rattip-b">fcn_004159b0</b>  is the dispatcher. You pass it an index in  <code class="rattip-code">edi</code> , it looks up  <code class="rattip-code">error_table[index]</code>  and copies that string to the error buffer. </p>
+<pre class="rattip-pre"><code class="rattip-code lang-bash">[0x004159b0]> pxq 8 @ 0x00472220 + (0x50 * 8)
+0x004724a0  0x000000000045a528                       (.E.....
+[0x004159b0]>
+</code></pre>
+<p class="rattip-p">  <code class="rattip-code">0x00472220 + (0x50 * 8) = 0x004724a0</code>  which is exactly where "Source too big" lives. So index  <code class="rattip-code">0x50</code>  (80 in decimal) is our error. </p>
+<p class="rattip-p"> So, any code that calls  <code class="rattip-code">fcn.004159b0</code>  with  <code class="rattip-code">edi = 0x50</code>  is triggering the "Source too big" error. So...finally we found what we have to find next...the error dispatcher call with our string index. </p>
+<hr class="rattip-hr">
+<h2 class="rattip-h2"> step 5: find the limit check (and the eureka moment) </h2>
+<p class="rattip-p"> Now we need to find where the compiler actually checks the line count and calls the error dispatcher with index  <code class="rattip-code">0x50</code> . </p>
+<p class="rattip-p"> The natural thing to do is search for  <code class="rattip-code">mov edi, 0x50</code>  followed by a call. In hex that's the bytes  <code class="rattip-code">bf 50 00 00 00 e8</code> : </p>
+<pre class="rattip-pre"><code class="rattip-code lang-bash">[0x004159b0]> /x bf50000000e8
+0x0041bc04 hit4_0 bf50000000e8
+0x0042ad7d hit4_1 bf50000000e8
+[0x004159b0]>
+</code></pre>
+<p class="rattip-p"> Two hits. After checking both, they're in functions that unconditionally trigger the error, not the ones doing the actual comparison. Dead ends... happens... </p>
+<h6 class="rattip-h6"> Here I started drinking lots and lots of water...I finished my Paper Boat juice too. </h6>
+<p class="rattip-p"> So let's think about this differently. The check must look something like: </p>
+<pre class="rattip-pre"><code class="rattip-code lang-c">if (line_count > LIMIT) {
+    error(0x50); // source too big
+}
+</code></pre>
+<p class="rattip-p"> In assembly that's a  <code class="rattip-code">cmp</code>  instruction followed by a conditional jump. The question is, what is  <code class="rattip-code">LIMIT</code> ? </p>
+<p class="rattip-p"> PureBasic advertises  <b class="rattip-b">800 lines</b>  as the free version limit on it's page. So why not let's just search for 800 simple...( <code class="rattip-code">0x320</code>  in hex). So I searched it as immediate value for  <code class="rattip-code">cmp</code>  instruction. </p>
+<pre class="rattip-pre"><code class="rattip-code lang-bash">[0x004159b0]> /a cmp dword [rax], 800
+[0x004159b0]> /a cmp eax, 800
+[0x004159b0]>
+</code></pre>
+<p class="rattip-p"> And I found....Nothing. Zero results. Hm. </p>
+<p class="rattip-p"> Okay so either the limit isn't stored as a direct constant (possible), or the actual number isn't 800 (liars??). </p>
+<h6 class="rattip-h6"> And so I drank more water </h6>
+<p class="rattip-p"> I had to go pee, and while peeing, I realised, just like we estimate things, pure basics people are also humans only, what if the limit is not 800, and it's maybe nearby it,  <i class="rattip-i">either 799,798...something like this?</i>  </p>
+<p class="rattip-p"> I washed my hands and ran towards my laptop, let's do this. </p>
+<p class="rattip-p"> I will search for all numbers coming down from 800... </p>
+<p class="rattip-p"> I was searching manually, 799, 798, ..., then I remembered I am a fucking programmer bro... </p>
+<p class="rattip-p"> so I wrote this nice bash command: </p>
+<pre class="rattip-pre"><code class="rattip-code lang-bash">╰─ ❯ for i in {750..800}; do
+echo "index: $i"
+r2 -q -c "/a cmp dword [rax], $i" pbcompiler 2> /dev/null
+done
+</code></pre>
+<p class="rattip-p"> Runs r2 everytime for that command and puts $i, it searches for LIMIT=750 to LIMIT=800... </p>
+<p class="rattip-p"> And... I got this!!! </p>
+<pre class="rattip-pre"><code class="rattip-code lang-bash">...
+index: 778
+index: 779
+index: 780
+index: 781
+index: 782
+0x00422a62 hit0_0 81380e030000
+index: 783
+index: 784
+index: 785
+index: 786
+index: 787
+index: 788
+...
+</code></pre>
+<p class="rattip-p"> There was a hit at  <code class="rattip-code">index = 782</code> ! </p>
+<h6 class="rattip-h6"> Power of thinking while doing susu? </h6>
+<p class="rattip-p"> This is the moment. The advertised limit is  <b class="rattip-b">800</b>  but the binary actually checks  <b class="rattip-b">782</b> . Now as I know this, finding the check is trivial. </p>
+<p class="rattip-p"> So I just searched for 782 now in r2 </p>
+<pre class="rattip-pre"><code class="rattip-code lang-bash">[0x004159b0]> /a cmp dword [rax], 782
+0x00422a62 hit14_0 81380e030000
+</code></pre>
+<p class="rattip-p"> And there is the hit. Now we can look at it to find the actual checking code finally... </p>
+<hr class="rattip-hr">
+<h2 class="rattip-h2"> step 6: reading the actual check </h2>
+<pre class="rattip-pre"><code class="rattip-code lang-bash">[0x00422a62]> pd -2
+│           0x00422a5a      4c8920         mov qword [rax], r12
+│           0x00422a5d      488b442418     mov rax, qword [var_18h]
+</code></pre>
+<p class="rattip-p"> The command  <code class="rattip-code">pd -2</code>  disassembles 2 instructions before the current position. So right before the  <code class="rattip-code">cmp</code> ,  <code class="rattip-code">rax</code>  is being loaded from local var  <code class="rattip-code">var_18h</code> . That could be the line counter pointer. </p>
+<p class="rattip-p"> Then: </p>
+<pre class="rattip-pre"><code class="rattip-code lang-asm">[0x00422a62]> pd 5 @ 0x00422a68
+│       ┌─< 0x00422a68      0f8f3b070000   jg 0x4231a9
+│       │   ; CODE XREF from fcn.00422930 @ 0x4231b9(x)
+│       │   0x00422a6e      48c7c0c83a..   mov rax, 0x483ac8
+│       │   0x00422a75      8b00           mov eax, dword [rax]
+│       │   0x00422a77      85c0           test eax, eax
+│      ┌──< 0x00422a79      0f8591060000   jne 0x423110
+</code></pre>
+<p class="rattip-p"> So the full picture at this spot: </p>
+<pre class="rattip-pre"><code class="rattip-code lang-asm">mov rax, [var_18h]      ; load line counter pointer
+cmp dword [rax], 0x30e  ; compare line count to 782
+jg 0x4231a9             ; if greater, jump to error path
+                        ; otherwise continue compiling normally
+</code></pre>
+<p class="rattip-p">  <code class="rattip-code">jg</code>  means "jump if greater". If the line counter exceeds 782, we jump to  <code class="rattip-code">0x4231a9</code> . Boom Boom... </p>
+<p class="rattip-p"> I had a smile now, this could be it, let's first see what is at  <code class="rattip-code">0x4231a9</code> . </p>
+<pre class="rattip-pre"><code class="rattip-code lang-bash">[0x00422a62]> s 0x4231a9
+[0x004231a9]> pdf
+Do you want to print 790 lines? (y/N) n
+</code></pre>
+<p class="rattip-p"> 790 lines...yeah... That's a big function, wtf! </p>
+<pre class="rattip-pre"><code class="rattip-code lang-bash">[0x004231a9]> pd 10
+│       ╎   ; CODE XREF from fcn.00422930 @ 0x422a68(x)
+│       ╎   0x004231a9      bf50000000     mov edi, 0x50               ; 'P' ; 80
+│       ╎   0x004231ae      c700ffffffff   mov dword [rax], 0xffffffff ; [0xffffffff:4]=-1 ; -1
+│       ╎   0x004231b4      e8f727ffff     call fcn.004159b0
+│       └─< 0x004231b9      e9b0f8ffff     jmp 0x422a6e
+│           ; CODE XREFS from fcn.00422930 @ 0x422efc(x), 0x422f12(x)
+│           0x004231be      48c7c05cf9..   mov rax, 0x4af95c
+│           0x004231c5      48c7c75cf9..   mov rdi, 0x4af95c
+│           0x004231cc      488d15ed2e..   lea rdx, [0x004760c0]
+│           0x004231d3      8b00           mov eax, dword [rax]
+│           0x004231d5      89442410       mov dword [var_10h], eax
+│           0x004231d9      83c001         add eax, 1
+</code></pre>
+<p class="rattip-p"> Great! see the output guyzes. </p>
+<p class="rattip-p"> First two instructions tell us everything... </p>
+<p class="rattip-p">  <code class="rattip-code">mov edi, 0x50</code>  then  <code class="rattip-code">call fcn.004159b0</code> . That's the error dispatcher being called with index 80, which we already know maps to "Source too big for the Free version." After firing the error it jumps back to  <code class="rattip-code">0x422a6e</code>  which is right after the  <code class="rattip-code">jg</code> , so the compilation loop just continues erroring. </p>
+<img class="rattip-img" src="/assets/yes.gif" width=200 height=200 />
+<hr class="rattip-hr">
+<h2 class="rattip-h2"> step 7: the patch (didn't work) </h2>
+<p class="rattip-p"> Now what we can do is, not let the compiler check the limit at the address, so we NOP the jg. </p>
+<p class="rattip-p">  <code class="rattip-code">jg</code>  here is 6 bytes long so we need 6 NOP bytes ( <code class="rattip-code">0x90</code> ) for each: </p>
+<p class="rattip-p"> So first of all we need to open r2 in write mode: </p>
+<pre class="rattip-pre"><code class="rattip-code lang-bash">╰─ ❯ r2 -w pbcompiler
+ -- Welcome to "IDA - the roguelike"
+[0x00402a40]>
+</code></pre>
+<p class="rattip-p"> Then patch was applied: </p>
+<pre class="rattip-pre"><code class="rattip-code lang-bash">s 0x00422a68
+wx 909090909090  ; write 6 NOPs
+</code></pre>
+<p class="rattip-p">  <code class="rattip-code">wx</code>  writes raw hex bytes at the current position. </p>
+<p class="rattip-p"> I verified it: </p>
+<p class="rattip-p"> Before Patching: </p>
+<pre class="rattip-pre"><code class="rattip-code lang-bash">[0x00422a68]> px 10
+- offset -  6869 6A6B 6C6D 6E6F 7071 7273 7475 7677  89ABCDEF01234567
+0x00422a68  0f8f 3b07 0000 48c7 c0c8                 ..;...H...
+[0x00422a68]>
+</code></pre>
+<p class="rattip-p"> After patching: </p>
+<pre class="rattip-pre"><code class="rattip-code lang-bash">[0x00422a68]> px 10
+- offset -  6869 6A6B 6C6D 6E6F 7071 7273 7475 7677  89ABCDEF01234567
+0x00422a68  9090 9090 9090 48c7 c0c8                 ......H...
+[0x00422a68]>
+</code></pre>
+<p class="rattip-p"> The first 6 bytes are  <code class="rattip-code">9090 9090 9090</code>  (NOP) now. The  <code class="rattip-code">jg</code>  is gone. The check no longer exists. </p>
+<hr class="rattip-hr">
+<h2 class="rattip-h2"> step 8: Now we run it on our big hello </h2>
+<pre class="rattip-pre"><code class="rattip-code lang-bash">╰─ ❯ ./pbcompiler big_hello.pb
+PureBasic 6.40 (Linux - x64) Free
+Loading external modules...
+Starting compilation...
+Error: Source too big for the Free version.
+</code></pre>
+<p class="rattip-p"> What????? -- noooo, why? </p>
+<img class="rattip-img" src="/assets/why.gif" width=200 height=200 />
+<p class="rattip-p"> It did not worked. </p>
+<p class="rattip-p"> The patch is in, binary is modified, but the error still fires? </p>
+<h6 class="rattip-h6"> I ate a dollop of peanut butter, and drank water while I was choking on it... Stood up, and watched my screen for some time, give up?...Naah! </h6>
+<p class="rattip-p"> Bulb erupted... <i class="rattip-i">there could be another check like this somewhere maybe</i> , that's what triggering the error now, let's see... </p>
+<h2 class="rattip-h2"> step 9: in search of the second check </h2>
+<p class="rattip-p"> Makes sense actually. Maybe one check per line during parsing, another one at a different stage. </p>
+<p class="rattip-p"> but when I searched this: </p>
+<pre class="rattip-pre"><code class="rattip-code lang-bash">[0x00402a40]> /a cmp dword [rax], 782
+0x00422a62 hit7_0 81380e030000
+[0x00402a40]>
+</code></pre>
+<p class="rattip-p"> I got that one hit only... so I tried this: </p>
+<pre class="rattip-pre"><code class="rattip-code lang-">[0x00402a40]> /a cmp rax, 782
+</code></pre>
+<p class="rattip-p"> but got nothing. </p>
+<p class="rattip-p"> Obviously some other register is being used here... </p>
+<p class="rattip-p"> Time for another bash for loop: </p>
+<pre class="rattip-pre"><code class="rattip-code lang-bash">╰─ ❯ for reg in rax rbx rcx rdx rsi rdi rbp; do
+echo "reg: $reg"
+ r2 -q -c "/a cmp dword [$reg], 782" pbcompiler 2>/dev/null
+done
+reg: rax
+0x00422a62 hit0_0 81380e030000
+reg: rbx
+reg: rcx
+reg: rdx
+reg: rsi
+reg: rdi
+reg: rbp
+</code></pre>
+<p class="rattip-p"> Still only that one hit, that we got before. </p>
+<h6 class="rattip-h6"> Ha, my legs hurt from cycling 25 kms yesterday... </h6>
+<p class="rattip-p"> Wait...So, what if not 64 bit register, but a 32 bit register is being used? </p>
+<pre class="rattip-pre"><code class="rattip-code lang-bash">╰─ ❯ for reg in eax ebx ecx edx esi edi ebp; do
+echo "reg: $reg"
+ r2 -q -c "/a cmp dword [$reg], 782" pbcompiler 2>/dev/null
+done
+reg: eax
+0x00422a62 hit0_0 81380e030000
+reg: ebx
+reg: ecx
+...
+</code></pre>
+<p class="rattip-p"> aah still the same only, ofc not  <code class="rattip-code">dword</code>  wtf...umm wait: </p>
+<pre class="rattip-pre"><code class="rattip-code lang-bash">╰─ ❯ for reg in eax ebx ecx edx esi edi ebp; do
+echo "reg: $reg"
+ r2 -q -c "/a cmp $reg, 782" pbcompiler 2>/dev/null
+done
+reg: eax
+reg: ebx
+reg: ecx
+reg: edx
+0x00422d0d hit0_0 81fa0e030000
+reg: esi
+reg: edi
+reg: ebp
+</code></pre>
+<p class="rattip-p">  <b class="rattip-b">Boom Baby!!</b>  found it! </p>
+<p class="rattip-p"> so it's register edx, see: </p>
+<pre class="rattip-pre"><code class="rattip-code lang-bash">[0x00402a40]> /a cmp edx, 782
+0x00422d0d hit10_0 81fa0e030000
+[0x00402a40]>
+</code></pre>
+<p class="rattip-p"> Now let's check this one out... </p>
+<h2 class="rattip-h2"> Step 10: Killing Another bugger </h2>
+<pre class="rattip-pre"><code class="rattip-code lang-bash">[0x00402a40]> pd 5 @ 0x00422d0d
+│           ;-- hit3_0:
+│           ;-- hit10_0:
+│           0x00422d0d      81fa0e030000   cmp edx, 0x30e              ; 782
+│       ┌─< 0x00422d13      0f8f16020000   jg 0x422f2f
+│       │   ; CODE XREF from fcn.00422930 @ 0x422f51(x)
+│       │   0x00422d19      418b36         mov esi, dword [r14]
+│       │   0x00422d1c      85f6           test esi, esi
+│      ┌──< 0x00422d1e      740c           je 0x422d2c
+</code></pre>
+<p class="rattip-p"> Haaa, same pattern we can see as before,  <code class="rattip-code">jg</code>  jumping to an error path. </p>
+<p class="rattip-p"> Let's patch this too. </p>
+<p class="rattip-p"> Again open r2 in write mode and: </p>
+<p class="rattip-p">  <code class="rattip-code">jg</code>  is at  <code class="rattip-code">0x00422d13</code>  so let's NOP it. </p>
+<pre class="rattip-pre"><code class="rattip-code lang-bash">s 0x00422d13
+wx 909090909090
+</code></pre>
+<p class="rattip-p"> Now let's verify it... </p>
+<p class="rattip-p"> Before: </p>
+<pre class="rattip-pre"><code class="rattip-code lang-bash">[0x00422d13]> px 10
+- offset -  1314 1516 1718 191A 1B1C 1D1E 1F20 2122  3456789ABCDEF012
+0x00422d13  0f8f 1602 0000 418b 3685                 ......A.6.
+</code></pre>
+<pre class="rattip-pre"><code class="rattip-code lang-bash">[0x00422d13]> px 10
+- offset -  1314 1516 1718 191A 1B1C 1D1E 1F20 2122  3456789ABCDEF012
+0x00422d13  9090 9090 9090 418b 3685                 ......A.6.
+</code></pre>
+<p class="rattip-p">  <code class="rattip-code">9090 9090 9090</code>  done scene. </p>
+<h2 class="rattip-h2"> The Moment of truth </h2>
+<pre class="rattip-pre"><code class="rattip-code lang-">╰─ ❯ ./pbcompiler big_hello.pb
+PureBasic 6.40 (Linux - x64) Free
+Loading external modules...
+Starting compilation...
+802 lines processed.
+Creating and launching executable.
+
+- Feel the ..PuRe.. Power -
+
+Hello, World
+Hello, World
+Hello, World
+Hello, World
+Hello, World
+</code></pre>
+<p class="rattip-p"> Wohooooo! 802 lines processed, and ran! What?  <b class="rattip-b">Pure Basic you are hacked bro.</b>  </p>
+<p class="rattip-p"> but wait... </p>
+<p class="rattip-p"> let's try with bigger hello: </p>
+<pre class="rattip-pre"><code class="rattip-code lang-bash">╰─ ❯ for i in {0..5000}; do
+  echo "PrintN(\"Hello, World\")" >> big_hello.pb;
+done
+
+
+╰─ ❯ wc -l big_hello.pb
+5001 big_hello.pb
+</code></pre>
+<p class="rattip-p"> And then I run it: </p>
+<pre class="rattip-pre"><code class="rattip-code lang-bash">╰─ ❯ ./pbcompiler big_hello.pb -e hello
+PureBasic 6.40 (Linux - x64) Free
+Loading external modules...
+Starting compilation...
+Error: Line 0 - Source too big for the Free version.
+</code></pre>
+<p class="rattip-p"> Faileddd... Are you kidding?...Another check I see. </p>
+<p class="rattip-p"> Notice something different this time though </p>
+<p class="rattip-p">  <code class="rattip-code">Line 0</code> . Before it just said  <code class="rattip-code">Error: Source too big for the Free version.</code>  with no line number. Now it's  <code class="rattip-code">Line 0 - Source too big...</code> . </p>
+<p class="rattip-p"> Line 0 means the check fired before the compiler even started parsing lines. This is a different check, somewhere earlier in the pipeline. </p>
+<p class="rattip-p"> Let's fire r2 again...it's work is not yet done ig. </p>
+<h2 class="rattip-h2"> step 11: hunting the Line 0 check </h2>
+<h6 class="rattip-h6"> Eating a mango...it's so windy outside now. </h6>
+<p class="rattip-p"> We are so close, like already we have done enought but still now we see this, let's find out what is this check now, like why this one too, let's see. </p>
+<p class="rattip-p"> First I searched for the format string responsible for printing  <code class="rattip-code">Line 0 - ...</code> : </p>
+<pre class="rattip-pre"><code class="rattip-code lang-bash">[0x00402a40]> iz | grep -i "line %"
+247  0x00054f13 0x00454f13 15  16   .rodata ascii   %s (%s line %d)
+248  0x00054f23 0x00454f23 22  23   .rodata ascii   Warning: Line %d - %s\n
+250  0x00054f45 0x00454f45 20  21   .rodata ascii   Error: Line %d - %s\n
+1484 0x00059988 0x00459988 34  35   .rodata ascii   in included file '%s'\nLine %d - %s
+1485 0x000599b0 0x004599b0 45  46   .rodata ascii   at line %d of the expanded macro (Macro.out)\n
+[0x00402a40]>
+</code></pre>
+<p class="rattip-p"> And there it is  <code class="rattip-code">250  0x00054f45 0x00454f45 20  21   .rodata ascii   Error: Line %d - %s\n</code> . </p>
+<p class="rattip-p"> Now xrefs: </p>
+<pre class="rattip-pre"><code class="rattip-code lang-bash">[0x00402a40]>  axt 0x00454f45
+fcn.00416910 0x416aa9 [STRN:r--] lea rdi, str.Error:_Line__d____s_n
+[0x00402a40]>
+</code></pre>
+<p class="rattip-p"> One caller. So  <code class="rattip-code">fcn.00416910</code>  seems to be a central error printing function that handles both formats. With and without line number. </p>
+<p class="rattip-p"> Looked at all its callers using the XREFs at the top of the function. </p>
+<p class="rattip-p"> For some time I traced through the whole call chain and eventually landed on the real question: who is setting up the "Source too big" error (index  <code class="rattip-code">0x50</code> ) through this new path? </p>
+<p class="rattip-p"> <img src="/assets/later.png" class="rattip-img" alt="meme" />  </p>
+<p class="rattip-p"> Searched for every place  <code class="rattip-code">0x50</code>  is moved into  <code class="rattip-code">edi</code>  before a dispatcher call: </p>
+<pre class="rattip-pre"><code class="rattip-code lang-bash">[0x00402a40]> /a mov edi, 0x50
+0x00415b37 hit3_0 bf50000000
+0x0041bc04 hit3_1 bf50000000
+0x00422f36 hit3_2 bf50000000
+0x004231a9 hit3_3 bf50000000
+0x0042ad7d hit3_4 bf50000000
+0x0042d2b5 hit3_5 bf50000000
+0x0042d34d hit3_6 bf50000000
+0x0042f776 hit3_7 bf50000000
+[0x00402a40]>
+</code></pre>
+<p class="rattip-p"> The interesting new one was  <code class="rattip-code">0x00415b37</code> . Let's look at what's around it: </p>
+<pre class="rattip-pre"><code class="rattip-code lang-bash">[0x00402a40]> pdf @ fcn.00415ac0
+...
+</code></pre>
+<p class="rattip-p"> And in the assembly I saw it, hiding in plain sight: </p>
+<pre class="rattip-pre"><code class="rattip-code lang-asm">│           0x00415ad4      8902           mov dword [rdx], eax
+│           0x00415ad6      3d54120000     cmp eax, 0x1254             ; 'T\x12'
+│       ┌─< 0x00415adb      7f53           jg 0x415b30
+│       │   ; CODE XREF from fcn.00415ac0 @ 0x415b47(x)
+│      ┌──> 0x00415add      48c7c01c2a..   mov rax, 0x4a2a1c           ; '\x1c*J'
+</code></pre>
+<p class="rattip-p">  <code class="rattip-code">0x1254</code>  is  <b class="rattip-b">4692</b>  in decimal. This function is called  <b class="rattip-b">716 times</b> . It's a token/identifier counter, not a line counter at all. </p>
+<p class="rattip-p"> Every time the compiler processes a token it calls this function, increments a counter, and if that counter exceeds 4692 it fires the error. </p>
+<p class="rattip-p"> And it clicked, previously I was thinking there is a  <code class="rattip-code">LOC</code>  limit right?  <i class="rattip-i">what if someone writes the whole code on a single line?</i>  Well there it is, these people are counting tokens too for that purpose, I think...Still for tokens there was higher limit...ok, understandable. </p>
+<h2 class="rattip-h2"> step 12: Patch this too (Final Patchuh!) </h2>
+<p class="rattip-p"> The  <code class="rattip-code">jg</code>  here is only 2 bytes (short jump), so the patch is simple: </p>
+<pre class="rattip-pre"><code class="rattip-code lang-bash">[0x00402a40]> s 0x00415adb
+[0x00415adb]> wx 9090
+[0x00415adb]>
+</code></pre>
+<p class="rattip-p"> verify: </p>
+<pre class="rattip-pre"><code class="rattip-code lang-bash">[0x00415adb]> px 5 @ 0x00415adb
+- offset -  DBDC DDDE DFE0 E1E2 E3E4 E5E6 E7E8 E9EA  BCDEF0123456789A
+0x00415adb  9090 48c7 c0                             ..H..
+[0x00415adb]>
+</code></pre>
+<p class="rattip-p">  <code class="rattip-code">9090</code>  done. </p>
+<h2 class="rattip-h2"> The REAL Moment of Truth Now </h2>
+<pre class="rattip-pre"><code class="rattip-code lang-bash">╰─ ❯ wc -l big_hello.pb
+5001 big_hello.pb
+
+╰─ ❯ ./pbcompiler big_hello.pb -e hello
+PureBasic 6.40 (Linux - x64) Free
+Loading external modules...
+Starting compilation...
+5002 lines processed.
+Creating executable "hello".
+
+- Feel the ..PuRe.. Power -
+</code></pre>
+<p class="rattip-p">  <b class="rattip-b">Boom Babyyy...</b>  </p>
+<p class="rattip-p"> Wait: </p>
+<pre class="rattip-pre"><code class="rattip-code lang-bash">╰─ ❯ rm big_hello.pb
+for i in {0..10000}; do
+ echo "PrintN(\"Hello, World\")" >> big_hello.pb
+done
+
+╰─ ❯ wc -l big_hello.pb
+10001 big_hello.pb
+
+╰─ ❯ ./pbcompiler big_hello.pb -e hello
+PureBasic 6.40 (Linux - x64) Free
+Loading external modules...
+Starting compilation...
+10002 lines processed.
+Creating executable "hello".
+
+- Feel the ..PuRe.. Power -
+</code></pre>
+<img class="rattip-img" src="/assets/yes2.gif" width=300 height=300 />
+<p class="rattip-p">  <b class="rattip-b">Even 10000 lines of code is also working!</b>  Noice. It's quite fast tbh. </p>
+<h2 class="rattip-h2"> the three checketiers </h2>
+<p class="rattip-p"> Turned out the free version limit isn't enforced by one check, it's enforced by three separate tripwires: </p>
+<table class="rattip-table">
+<thead class="rattip-thead"><tr class="rattip-tr"><th class="rattip-th">Patch</th>
+<th class="rattip-th">Address</th>
+<th class="rattip-th">What it checks</th>
+<th class="rattip-th">Limit</th>
+<th class="rattip-th">How to patch</th>
+</tr>
+</thead>
+<tbody class="rattip-tbody"><tr class="rattip-tr"><td class="rattip-td">1</td>
+<td class="rattip-td"> <code class="rattip-code">0x00422a68</code> </td>
+<td class="rattip-td">line counter (via pointer)</td>
+<td class="rattip-td">782</td>
+<td class="rattip-td">6× NOP</td>
+</tr>
+<tr class="rattip-tr"><td class="rattip-td">2</td>
+<td class="rattip-td"> <code class="rattip-code">0x00422d13</code> </td>
+<td class="rattip-td">line counter (via register)</td>
+<td class="rattip-td">782</td>
+<td class="rattip-td">6× NOP</td>
+</tr>
+<tr class="rattip-tr"><td class="rattip-td">3</td>
+<td class="rattip-td"> <code class="rattip-code">0x00415adb</code> </td>
+<td class="rattip-td">token counter</td>
+<td class="rattip-td">4692</td>
+<td class="rattip-td">2× NOP</td>
+</tr>
+</tbody>
+</table>
+<p class="rattip-p"> The first two were both  <code class="rattip-code">jg</code>  instructions (6 bytes each) inside the main parsing loop, checking the line count in two different ways, probably one for normal files and one for included files. </p>
+<p class="rattip-p"> The third was the sneaky one. A token counter buried inside a function called hundreds of times per compilation, with a limit of  <b class="rattip-b">4692</b>  And because it fires in a pre-parse stage, the line number in the error is always 0, which is what tipped us off that it was a completely different beast. </p>
+<p class="rattip-p">  <b class="rattip-b">Pure Basic</b> : three locks on the door. We picked all of 'em. </p>
+<h2 class="rattip-h2"> things worth taking away from this </h2>
+<h5 class="rattip-h5"> When axt gives you nothing, look for pointer tables. </h5>
+<p class="rattip-p"> Error strings in compiled binaries are often stored in tables, not referenced directly. When cross reference analysis fails, search for the address bytes themselves using  <code class="rattip-code">/x</code> . The absence of xrefs is information itself. </p>
+<h5 class="rattip-h5"> The 800 lines limit. </h5>
+<p class="rattip-p"> PureBasic says 800 lines. The binary checks 782. If we had only searched for 800 we would have found nothing and given up. When searching for a magic number, try nearby values too. </p>
+<h5 class="rattip-h5"> There are usually multiple checks, not one. </h5>
+<p class="rattip-p"> Patching the first  <code class="rattip-code">jg</code>  still gave us the error. There were two separate comparisons. Always search exhaustively. License checks often have redundant trip wires. </p>
+<h3 class="rattip-h3">  <b class="rattip-b">some r2 commands cheat sheet from this blog:</b>  </h3>
+<table class="rattip-table">
+<thead class="rattip-thead"><tr class="rattip-tr"><th class="rattip-th">Command</th>
+<th class="rattip-th">Description</th>
+</tr>
+</thead>
+<tbody class="rattip-tbody"><tr class="rattip-tr"><td class="rattip-td">aaaa</td>
+<td class="rattip-td">run full analysis</td>
+</tr>
+<tr class="rattip-tr"><td class="rattip-td">iz</td>
+<td class="rattip-td">list strings in binary</td>
+</tr>
+<tr class="rattip-tr"><td class="rattip-td">axt <addr></td>
+<td class="rattip-td">find cross references to an address</td>
+</tr>
+<tr class="rattip-tr"><td class="rattip-td">/x <hex></td>
+<td class="rattip-td">search for hex bytes</td>
+</tr>
+<tr class="rattip-tr"><td class="rattip-td">s <addr></td>
+<td class="rattip-td">seek to address</td>
+</tr>
+<tr class="rattip-tr"><td class="rattip-td">pxq <n></td>
+<td class="rattip-td">print n bytes as 64-bit hex values</td>
+</tr>
+<tr class="rattip-tr"><td class="rattip-td">ps @ <addr></td>
+<td class="rattip-td">print string at address</td>
+</tr>
+<tr class="rattip-tr"><td class="rattip-td">pd <n></td>
+<td class="rattip-td">disassemble n instructions</td>
+</tr>
+<tr class="rattip-tr"><td class="rattip-td">wx <hex></td>
+<td class="rattip-td">write hex bytes at current position</td>
+</tr>
+</tbody>
+</table>
+<p class="rattip-p"> The End...Thank You for reading till here. </p>
+<hr class="rattip-hr">
+<p class="rattip-p">  <b class="rattip-b">If you're a PureBasic dev reading this:</b>  Hey, now you know where to look. No hard feelings, cool language honestly. </p>
+<p class="rattip-p"> Reference: <a href="https://book.rada.re/" class="rattip-a">The Radare2 Book</a>  </p>
+
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+  <script>hljs.highlightAll();</script>
+
+<footer class="rattip-footer"> made using rattip | © aliqyan-21 </footer>
+</body>
+
+</html>
