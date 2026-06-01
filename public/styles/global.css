@@ -34,6 +34,15 @@
   padding: 0;
 }
 
+@media (max-width: 768px) {
+
+  a,
+  button,
+  input {
+    min-height: auto;
+  }
+}
+
 ::selection {
   background: var(--accent-dim);
   color: var(--white);
@@ -48,16 +57,17 @@ body {
   background-color: var(--bg);
   color: var(--text);
   font-family: var(--font-mono);
-  font-size: 0.82rem;
-  font-weight: 300;
+  font-size: 1.05rem;
+  font-weight: 400;
   max-width: 680px;
   margin: 0 auto;
   padding: 2.5rem 1.5rem 3rem;
-  line-height: 1.75;
+  line-height: 1.6;
   letter-spacing: 0.015em;
   display: flex;
   flex-direction: column;
   min-height: 100%;
+  position: relative;
 }
 
 .theme-toggle {
@@ -68,13 +78,15 @@ body {
 
   background: var(--bg-raised);
   border: 1px solid var(--border);
-  padding: 0.25rem 0.5rem;
+  border-radius: 2px;
+  padding: 0.3rem 0.6rem;
   font-family: var(--font-mono);
   font-size: 0.65rem;
   text-transform: uppercase;
   color: var(--text-dim);
   cursor: pointer;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.08em;
+  transition: all 0.15s ease;
 }
 
 .theme-toggle:hover {
@@ -85,6 +97,7 @@ body {
 
 .rattip-nav {
   display: flex;
+  align-items: center;
   gap: 2rem;
   padding-bottom: 1rem;
   margin-bottom: 1.8rem;
@@ -93,7 +106,8 @@ body {
 
 .rattip-nav-a {
   font-family: var(--font-mono);
-  font-size: 0.7rem;
+  font-size: 0.85rem;
+  font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.12em;
   color: var(--text-muted);
@@ -114,11 +128,13 @@ body {
   padding-bottom: 1rem;
   margin-bottom: 1.8rem;
   border-bottom: 1px solid var(--border);
+  gap: 1rem;
 }
 
 .rattip-date {
   font-family: var(--font-mono);
-  font-size: 0.68rem;
+  font-size: 0.8rem;
+  font-weight: 700;
   color: var(--text-muted);
   letter-spacing: 0.1em;
   text-transform: uppercase;
@@ -130,7 +146,7 @@ body {
   padding-bottom: 0rem;
   border-top: 0px solid var(--border);
   font-family: var(--font-mono);
-  font-size: 0.55rem;
+  font-size: 0.75rem;
   color: var(--text-muted);
   letter-spacing: 0.1em;
   text-transform: uppercase;
@@ -144,12 +160,14 @@ body {
 .rattip-h5,
 .rattip-h6 {
   scroll-margin-top: 1rem;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
 }
 
 .rattip-h1 {
   font-family: var(--font-mono);
   font-size: 1.5rem;
-  font-weight: 500;
+  font-weight: 700;
   color: var(--white);
   line-height: 1.2;
   margin: 1.2rem 0 0.5rem;
@@ -177,8 +195,8 @@ body {
 
 .rattip-h2 {
   font-family: var(--font-mono);
-  font-size: 0.78rem;
-  font-weight: 400;
+  font-size: 0.85rem;
+  font-weight: 700;
   color: var(--accent);
   margin: 1.6rem 0 0.55rem;
   text-transform: uppercase;
@@ -188,8 +206,8 @@ body {
 
 .rattip-h3 {
   font-family: var(--font-mono);
-  font-size: 0.74rem;
-  font-weight: 400;
+  font-size: 0.8rem;
+  font-weight: 700;
   color: var(--text-dim);
   text-transform: uppercase;
   letter-spacing: 0.14em;
@@ -207,7 +225,7 @@ body {
 
 .rattip-h4 {
   font-family: var(--font-mono);
-  font-size: 1rem;
+  font-size: 1.05rem;
   font-weight: 400;
   font-style: italic;
   color: var(--white);
@@ -218,7 +236,7 @@ body {
 
 .rattip-h5 {
   font-family: var(--font-mono);
-  font-size: 0.9rem;
+  font-size: 0.95rem;
   font-weight: 400;
   color: var(--text);
   line-height: 1.45;
@@ -228,7 +246,7 @@ body {
 
 .rattip-h6 {
   font-family: var(--font-mono);
-  font-size: 0.66rem;
+  font-size: 0.75rem;
   font-weight: 400;
   color: var(--text-dim);
   letter-spacing: 0.16em;
@@ -255,6 +273,8 @@ body {
 
 .rattip-p {
   margin: 0.5rem 0;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
 }
 
 .rattip-a {
@@ -262,6 +282,7 @@ body {
   text-decoration: none;
   border-bottom: 1px solid var(--accent-dim);
   transition: color 0.15s, border-color 0.15s;
+  word-break: break-all;
 }
 
 .rattip-a:hover {
@@ -303,17 +324,17 @@ body {
 }
 
 .rattip-code {
-  display: inline-block;
-  vertical-align: middle;
   font-family: var(--font-mono);
-  font-size: 0.75em;
+  font-size: 0.85em;
   background-color: var(--bg-code);
   color: var(--accent);
-  padding: 0.1rem 0.3rem;
+  padding: 0.15rem 0.35rem;
   border-radius: 3px;
   border: 1.5px solid var(--border);
   line-height: 1.4;
-  white-space: nowrap;
+  white-space: normal;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
 }
 
 .rattip-pre {
@@ -325,6 +346,7 @@ body {
   overflow-x: auto;
   margin: 0.75rem 0;
   width: 100%;
+  -webkit-overflow-scrolling: touch;
 }
 
 .rattip-pre .rattip-code {
@@ -332,7 +354,7 @@ body {
   border: none;
   padding: 0;
   color: var(--text);
-  font-size: 0.78em;
+  font-size: 0.82em;
   line-height: 1.65;
   white-space: pre;
   display: block;
@@ -345,7 +367,7 @@ body {
   border-left: 2px solid var(--accent-dim);
   color: var(--text-dim);
   font-style: italic;
-  font-size: 0.88em;
+  font-size: 0.95em;
   line-height: 1.6;
   display: flow-root;
 }
@@ -358,12 +380,19 @@ body {
   margin-top: 0.4rem;
 }
 
+.rattip-table-wrapper {
+  width: 100%;
+  overflow-x: auto;
+  margin: 1rem 0;
+  -webkit-overflow-scrolling: touch;
+}
+
 .rattip-table {
   width: 100%;
   border-collapse: collapse;
-  margin: 1rem 0;
-  font-size: 0.75rem;
+  font-size: 0.85rem;
   font-family: var(--font-mono);
+  min-width: 450px;
 }
 
 .rattip-thead {
@@ -371,13 +400,13 @@ body {
 }
 
 .rattip-th {
-  font-size: 0.63rem;
+  font-size: 0.75rem;
   text-transform: uppercase;
   letter-spacing: 0.12em;
   color: var(--accent);
   padding: 0.5rem 0.8rem;
   text-align: left;
-  font-weight: 400;
+  font-weight: 700;
 }
 
 .rattip-td {
@@ -391,7 +420,7 @@ body {
 }
 
 .rattip-b {
-  font-weight: 500;
+  font-weight: 700;
   color: var(--white);
 }
 
@@ -435,13 +464,14 @@ body {
 
 .rattip-sup,
 .rattip-sub {
-  font-size: 0.62em;
+  font-size: 0.7em;
   font-family: var(--font-mono);
   color: var(--accent);
 }
 
 .rattip-img {
   max-width: 100%;
+  height: auto;
   border-radius: 2px;
   margin: 1rem 0;
   border: 1px solid var(--border);
@@ -473,7 +503,8 @@ body {
 
 .subtitle {
   font-family: var(--font-mono);
-  font-size: 0.65rem;
+  font-size: 0.75rem;
+  font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.18em;
   color: var(--accent-dim);
@@ -482,15 +513,16 @@ body {
 }
 
 .rattip-back-container {
-  position: fixed;
-  top: 1.8rem;
-  left: 1.8rem;
+  position: absolute;
+  top: 2.5rem;
+  left: -7.5rem;
   z-index: 100;
 }
 
 .rattip-back-btn {
   font-family: var(--font-mono);
-  font-size: 0.68rem;
+  font-size: 0.85rem;
+  font-weight: 700;
   color: var(--text-dim);
   text-decoration: none;
   display: inline-flex;
@@ -540,13 +572,14 @@ body {
   border: 1.0px solid var(--accent-dim);
   background: var(--bg-code);
   padding: 1px;
+  flex-shrink: 0;
 }
 
 .about-header h1 {
   margin: 0;
   font-family: var(--font-mono);
-  font-size: 1.2rem;
-  font-weight: 500;
+  font-size: 1.3rem;
+  font-weight: 700;
   color: var(--white);
   line-height: 1;
 }
@@ -554,7 +587,8 @@ body {
 .about-header .subtitle {
   margin: 0.3rem 0 0 0;
   font-family: var(--font-mono);
-  font-size: 0.6rem;
+  font-size: 0.7rem;
+  font-weight: 700;
   color: var(--accent);
   text-transform: uppercase;
   letter-spacing: 0.15em;
@@ -579,13 +613,20 @@ body {
   background: var(--text-muted);
 }
 
+@media (max-width: 920px) {
+  .rattip-back-container {
+    position: static;
+    margin-bottom: 1.5rem;
+  }
+}
+
 @media (max-width: 768px) {
   body {
-    padding: 1.5rem 1rem 2rem;
+    padding: 2rem 1.25rem 2rem;
   }
 
   .rattip-nav {
-    gap: 1rem;
+    gap: 1.2rem;
     flex-wrap: wrap;
   }
 
@@ -594,11 +635,34 @@ body {
   }
 
   .about-header h1 {
-    font-size: 1.1rem;
+    font-size: 1.15rem;
+  }
+}
+
+@media (max-width: 480px) {
+  body {
+    padding: 1.5rem 1rem 2rem;
   }
 
-  .rattip-back-container {
-    position: static;
-    margin-bottom: 1.5rem;
+  .rattip-nav {
+    gap: 1rem;
+  }
+
+  .rattip-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.3rem;
+  }
+
+  .theme-toggle {
+    bottom: 1rem;
+    right: 1rem;
+    padding: 0.2rem 0.4rem;
+    font-size: 0.6rem;
+    opacity: 0.5;
+  }
+
+  .theme-toggle:active {
+    opacity: 1;
   }
 }
